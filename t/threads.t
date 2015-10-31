@@ -25,7 +25,7 @@ else {
 sub worker_task {
     my $id = shift;
 
-    my $context = ZMQ::FFI->new();
+    my $context = ZMQ::FFI->new( autoclean => 0 );
     my $worker  = $context->socket(ZMQ_REQ);
 
     $worker->set_identity("worker-$id");
@@ -34,10 +34,12 @@ sub worker_task {
     $worker->send("ohhai from worker-$id");
 
     my $reply = $worker->recv();
+
+    $worker->close();
     return ($reply, "worker-$id");
 }
 
-my $context = ZMQ::FFI->new();
+my $context = ZMQ::FFI->new( autoclean => 0 );
 my $broker  = $context->socket(ZMQ_ROUTER);
 
 $broker->bind('tcp://*:5671');
@@ -64,3 +66,6 @@ for my $thr (@thr) {
     is $reply, "goodbye $identity",
                "'$identity' got parent thread goodbye message";
 }
+
+$broker->close();
+$context->destroy();
