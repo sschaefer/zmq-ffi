@@ -25,6 +25,11 @@ has type => (
     required => 1,
 );
 
+has autoclean => (
+    is      => 'ro',
+    default => 1,
+);
+
 # real underlying zmq socket pointer
 has _socket => (
     is      => 'rw',

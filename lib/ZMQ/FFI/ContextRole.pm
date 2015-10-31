@@ -29,6 +29,11 @@ has max_sockets => (
     predicate => 'has_max_sockets',
 );
 
+has autoclean => (
+    is      => 'ro',
+    default => 1,
+);
+
 requires qw(
     get
     set

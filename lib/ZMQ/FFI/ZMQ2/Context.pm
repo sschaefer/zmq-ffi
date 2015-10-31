@@ -103,6 +103,7 @@ sub socket {
         ctx          => $self,
         type         => $type,
         soname       => $self->soname,
+        autoclean    => $self->autoclean,
     );
 }
 
@@ -149,6 +150,8 @@ sub destroy {
 
 sub DEMOLISH {
     my ($self) = @_;
+
+    return if not $self->autoclean;
 
     unless ($self->_ctx == -1) {
         $self->destroy();

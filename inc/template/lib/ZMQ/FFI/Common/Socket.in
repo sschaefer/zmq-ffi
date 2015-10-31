@@ -300,6 +300,8 @@ sub close {
 sub DEMOLISH {
     my ($self) = @_;
 
+    return if not $self->autoclean;
+
     unless ($self->_socket == -1) {
         $self->check_error(
             'zmq_msg_close',
