@@ -70,23 +70,23 @@ elsif ($major == 3) {
 else {
     if ($major == 4 and $minor == 0) {
 	no warnings q/redefine/;
-	
+
 	local *ZMQ::FFI::ZMQ4::Context::destroy = sub {
 	    my ($self) = @_;
 	    $self->context_ptr(-1);
 	    push @gc_stack, 'destroy'
 	};
-	
+
 	local *ZMQ::FFI::ZMQ4::Socket::close  = sub {
 	    my ($self) = @_;
 	    $self->socket_ptr(-1);
 	    push @gc_stack, 'close'
 	};
-	
+
 	use warnings;
-	
+
 	mkcontext();
-	
+
 	is_deeply
 	    \@gc_stack,
 	    ['close', 'close', 'close', 'destroy'],
@@ -94,23 +94,23 @@ else {
     }
     else {
 	no warnings q/redefine/;
-	
+
 	local *ZMQ::FFI::ZMQ4_1::Context::destroy = sub {
 	    my ($self) = @_;
 	    $self->context_ptr(-1);
 	    push @gc_stack, 'destroy'
 	};
-	
+
 	local *ZMQ::FFI::ZMQ4_1::Socket::close  = sub {
 	    my ($self) = @_;
 	    $self->socket_ptr(-1);
 	    push @gc_stack, 'close'
 	};
-	
+
 	use warnings;
-	
+
 	mkcontext();
-	
+
 	is_deeply
 	    \@gc_stack,
 	    ['close', 'close', 'close', 'destroy'],

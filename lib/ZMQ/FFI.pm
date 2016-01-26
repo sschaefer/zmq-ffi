@@ -38,7 +38,7 @@ sub new {
     elsif ($major == 3) {
         require ZMQ::FFI::ZMQ3::Context;
         return ZMQ::FFI::ZMQ3::Context->new(%args);
-    } 
+    }
     else {
 	if ($major == 4 and $minor == 0) {
             require ZMQ::FFI::ZMQ4::Context;

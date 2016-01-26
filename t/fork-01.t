@@ -59,9 +59,9 @@ else {
 	local *ZMQ::FFI::ZMQ4::Context::zmq_ctx_term = sub {
 	    $parent_c_destroyed = 1;
 	};
-	
+
 	use warnings;
-	
+
 	pid_test();
     }
     else {
@@ -74,9 +74,9 @@ else {
 	local *ZMQ::FFI::ZMQ4_1::Context::zmq_ctx_term = sub {
 	    $parent_c_destroyed = 1;
 	};
-	
+
 	use warnings;
-	
+
 	pid_test();
     }
 }
