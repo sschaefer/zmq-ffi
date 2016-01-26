@@ -18,105 +18,38 @@ use ZMQ::FFI::Util qw(zmq_version);
 
 my @gc_stack;
 
-my ($major, $minor) = zmq_version;
-if ($major == 2) {
-    no warnings q/redefine/;
+# replace with fake methods for testing
 
-    local *ZMQ::FFI::ZMQ2::Context::destroy = sub {
+no warnings q/redefine/;
+
+my ($major) = zmq_version;
+
+my $context_redefine = qq(*ZMQ::FFI::ZMQ${major}::Context::destroy);
+eval $context_redefine.'='.q(
+    sub {
         my ($self) = @_;
         $self->context_ptr(-1);
         push @gc_stack, 'destroy'
     };
+);
 
-    local *ZMQ::FFI::ZMQ2::Socket::close = sub {
+die $@ if $@;
+
+
+my $socket_redefine = qq(*ZMQ::FFI::ZMQ${major}::Socket::close);
+eval $socket_redefine.'='.q(
+    sub {
         my ($self) = @_;
         $self->socket_ptr(-1);
         push @gc_stack, 'close'
     };
+);
 
-    use warnings;
+die $@ if $@;
 
-    mkcontext();
+use warnings;
 
-    is_deeply
-        \@gc_stack,
-        ['close', 'close', 'close', 'destroy'],
-        q(socket reaped before context);
-}
-elsif ($major == 3) {
-    no warnings q/redefine/;
-
-    local *ZMQ::FFI::ZMQ3::Context::destroy = sub {
-        my ($self) = @_;
-        $self->context_ptr(-1);
-        push @gc_stack, 'destroy'
-    };
-
-    local *ZMQ::FFI::ZMQ3::Socket::close  = sub {
-        my ($self) = @_;
-        $self->socket_ptr(-1);
-        push @gc_stack, 'close'
-    };
-
-    use warnings;
-
-    mkcontext();
-
-    is_deeply
-        \@gc_stack,
-        ['close', 'close', 'close', 'destroy'],
-        q(sockets closed before context destroyed);
-}
-else {
-    if ($major == 4 and $minor == 0) {
-	no warnings q/redefine/;
-
-	local *ZMQ::FFI::ZMQ4::Context::destroy = sub {
-	    my ($self) = @_;
-	    $self->context_ptr(-1);
-	    push @gc_stack, 'destroy'
-	};
-
-	local *ZMQ::FFI::ZMQ4::Socket::close  = sub {
-	    my ($self) = @_;
-	    $self->socket_ptr(-1);
-	    push @gc_stack, 'close'
-	};
-
-	use warnings;
-
-	mkcontext();
-
-	is_deeply
-	    \@gc_stack,
-	    ['close', 'close', 'close', 'destroy'],
-	    q(sockets closed before context destroyed);
-    }
-    else {
-	no warnings q/redefine/;
-
-	local *ZMQ::FFI::ZMQ4_1::Context::destroy = sub {
-	    my ($self) = @_;
-	    $self->context_ptr(-1);
-	    push @gc_stack, 'destroy'
-	};
-
-	local *ZMQ::FFI::ZMQ4_1::Socket::close  = sub {
-	    my ($self) = @_;
-	    $self->socket_ptr(-1);
-	    push @gc_stack, 'close'
-	};
-
-	use warnings;
-
-	mkcontext();
-
-	is_deeply
-	    \@gc_stack,
-	    ['close', 'close', 'close', 'destroy'],
-	    q(sockets closed before context destroyed);
-    }
-}
+# now run the tests
 
 sub mkcontext {
     my $context = ZMQ::FFI->new();
@@ -134,5 +67,12 @@ sub mksockets {
 
     return;
 }
+
+mkcontext();
+
+is_deeply
+    \@gc_stack,
+    ['close', 'close', 'close', 'destroy'],
+    q(socket reaped before context);
 
 done_testing;
