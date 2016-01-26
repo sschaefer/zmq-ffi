@@ -18,68 +18,38 @@ my $parent_s_closed;
 my $parent_c_destroyed;
 
 my ($major, $minor) = $parent_c->version;
-if ($major == 2) {
-    no warnings qw/redefine once/;
 
-    local *ZMQ::FFI::ZMQ2::Socket::zmq_close = sub {
-        $parent_s_closed = 1;
-    };
+my $version = $minor > 0 ? "${major}_${minor}" : $major;
 
-    local *ZMQ::FFI::ZMQ2::Context::zmq_term = sub {
-        $parent_c_destroyed = 1;
-    };
+eval qq(
+no warnings qw/redefine once/;
 
-    use warnings;
+*ZMQ::FFI::ZMQ${version}::Socket::zmq_close = sub {
+    \$parent_s_closed = 1;
+};
 
-    pid_test();
-}
-elsif ($major == 3) {
-    no warnings qw/redefine once/;
+*ZMQ::FFI::ZMQ4::Context::zmq_ctx_term = sub {
+    \$parent_c_destroyed = 1;
+};
 
-    local *ZMQ::FFI::ZMQ3::Socket::zmq_close = sub {
-        $parent_s_closed = 1;
-    };
+use warnings;
+);
 
-    local *ZMQ::FFI::ZMQ3::Context::zmq_ctx_destroy = sub {
-        $parent_c_destroyed = 1;
-    };
+die $@ if $@;
 
-    use warnings;
+# no warnings qw/redefine once/;
+#
+# my $context_redefine = qq(*ZMQ::FFI::ZMQ${version}::Context::zmq_term);
+# eval $context_redefine.'='.q(sub { warn "DESTROY"; $parent_c_destroyed = 1 });
+# die $@ if $@;
+#
+# my $socket_redefine = qq(*ZMQ::FFI::ZMQ${version}::Socket::zmq_close);
+# eval $socket_redefine.'='.q(sub { warn "CLOSE"; $parent_s_closed = 1 };);
+# die $@ if $@;
+#
+# use warnings;
 
-    pid_test();
-}
-else {
-    if ($major == 4 and $minor == 0) {
-        no warnings qw/redefine once/;
-
-        local *ZMQ::FFI::ZMQ4::Socket::zmq_close = sub {
-            $parent_s_closed = 1;
-        };
-
-	local *ZMQ::FFI::ZMQ4::Context::zmq_ctx_term = sub {
-	    $parent_c_destroyed = 1;
-	};
-
-	use warnings;
-
-	pid_test();
-    }
-    else {
-	no warnings qw/redefine once/;
-
-        local *ZMQ::FFI::ZMQ4_1::Socket::zmq_close = sub {
-            $parent_s_closed = 1;
-        };
-
-	local *ZMQ::FFI::ZMQ4_1::Context::zmq_ctx_term = sub {
-	    $parent_c_destroyed = 1;
-	};
-
-	use warnings;
-
-	pid_test();
-    }
-}
+pid_test();
 
 sub pid_test {
     my $child_pid = open(FROM_CHILDTEST, '-|') // die "fork failed $!";

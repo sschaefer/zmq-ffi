@@ -9,7 +9,7 @@ use FFI::Platypus;
 use Errno qw(EINVAL EAGAIN);
 
 use ZMQ::FFI qw(:all);
-use ZMQ::FFI::Util qw(zmq_soname);
+use ZMQ::FFI::Util qw(zmq_soname zmq_version);
 
 subtest 'socket errors' => sub {
     $! = EINVAL;
@@ -51,10 +51,11 @@ subtest 'util errors' => sub {
 subtest 'fatal socket error' => sub {
     no warnings qw/redefine once/;
 
-    local *ZMQ::FFI::ZMQ2::Socket::zmq_send   = sub { return -1; };
-    local *ZMQ::FFI::ZMQ3::Socket::zmq_send   = sub { return -1; };
-    local *ZMQ::FFI::ZMQ4::Socket::zmq_send   = sub { return -1; };
-    local *ZMQ::FFI::ZMQ4_1::Socket::zmq_send = sub { return -1; };
+    my ($major, $minor) = zmq_version;
+    my $version = $minor > 0 ? "${major}_${minor}" : $major;
+
+    eval qq(*ZMQ::FFI::ZMQ${version}::Socket::zmq_send = sub { return -1});
+    die $@ if $@;
 
     my $ctx = ZMQ::FFI->new();
     my $socket = $ctx->socket(ZMQ_REQ);

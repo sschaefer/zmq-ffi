@@ -22,9 +22,12 @@ my @gc_stack;
 
 no warnings q/redefine/;
 
-my ($major) = zmq_version;
 
-my $context_redefine = qq(*ZMQ::FFI::ZMQ${major}::Context::destroy);
+my ($major, $minor) = zmq_version;
+
+my $version = $minor > 0 ? "${major}_${minor}" : $major;
+
+my $context_redefine = qq(*ZMQ::FFI::ZMQ${version}::Context::destroy);
 eval $context_redefine.'='.q(
     sub {
         my ($self) = @_;
@@ -36,7 +39,7 @@ eval $context_redefine.'='.q(
 die $@ if $@;
 
 
-my $socket_redefine = qq(*ZMQ::FFI::ZMQ${major}::Socket::close);
+my $socket_redefine = qq(*ZMQ::FFI::ZMQ${version}::Socket::close);
 eval $socket_redefine.'='.q(
     sub {
         my ($self) = @_;
